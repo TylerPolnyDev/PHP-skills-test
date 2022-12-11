@@ -25,7 +25,10 @@
     </form>
 </div>
 <br>
+    
+    
 <?php
+//when user clicks submit, creates an array with user input   
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_name = $_POST['product_name'];
     $quantity = $_POST['quantity'];
@@ -37,40 +40,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'price' => $price,
         'datetime' => $dateTimeSubmitted
     );
+    
+    //get data from data.json, and decode it to an array.
     $existing_data_json = file_get_contents('data.json');
     $temp_array = json_decode($existing_data_json,true);
-    //echo '<pre>'; print_r($temp_array); echo '</pre>';
-
+    
+    //if this is the first entry, json encode $data and stage for addition to data.json
     if ($temp_array == null){
         $data_clean = array(0 => $data);
         $json_data = json_encode($data_clean);
     }else{
+        //check data.json to see if product_name already exists
         foreach ($temp_array as $key=>$product){
-            //echo 'value for product name in json';
-            //echo '<pre>'; print_r($product['product_name']); echo '</pre>';
-            //echo 'value for submitted product name';
-            //echo '<pre>'; print_r($data['product_name']); echo '</pre>';
-
-            // if product already in list, update values.
             if($product['product_name'] == $data['product_name']){
+                //if product_name exists removes it from array
                 unset($temp_array[$key]);
-                //echo 'value updated array';
-                //echo '<pre>'; print_r($temp_array); echo '</pre>';
-
-                $json_data = json_encode($temp_array);
             }
         }
+        //add new data to array and json encode
         array_push ($temp_array,$data);
         $json_data = json_encode($temp_array);
-
     }
+    //update data.json
     file_put_contents('data.json', $json_data);
 }
 
+    
+//get data.json
 $json = file_get_contents('data.json');
 $data = json_decode($json, true);
-//echo '<pre>'; print_r($data); echo '</pre>';
+//confirms that data is available before showing table
 if ($data != null && count($data) > 0) {
+    //print table header
     echo '<table>';
     echo '<tr>';
     echo '<th>||Product name</th>';
@@ -79,9 +80,14 @@ if ($data != null && count($data) > 0) {
     echo '<th>||Datetime Submitted</th>';
     echo '<th>||Total Value</th>';
     echo '</tr>';
+    //set up array for grand total calculation
     $totalValues = array();
+    
+    //print table row for each product
     foreach ($data as $row) {
+        //calculate total value of product
         $totalValue = $row['price'] * $row['quantity'];
+        //collect total value for grand total calculation
         array_push($totalValues,$totalValue);
         //echo '<pre>'; print_r($row); echo '</pre>';
         echo '<tr>';
@@ -89,16 +95,17 @@ if ($data != null && count($data) > 0) {
         echo '<td>||' . $row['quantity'] . '</td>';
         echo '<td>||$' . $row['price'] . '</td>';
         echo '<td>||' . $row['datetime'] . '</td>';
-
         echo '<td>||$' . $totalValue . '</td>';
-
         echo '</tr>';
     }
     echo '</table>';
+    //clear value for $grandTotal
     $grandTotal = 0;
+    //add all total values
     foreach ($totalValues as $value) {
         $grandTotal = $grandTotal + $value;
     }
+    //print grand total
     echo 'Grand Total Value: $'.$grandTotal;
 }
 ?>
